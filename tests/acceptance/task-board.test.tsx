@@ -308,6 +308,7 @@ describe("AC-001.8 API title rejection", () => {
     fill("Buy milk", "2026-12-24");
     submit();
     expect(await main.findByText(msg)).toBeInTheDocument();
+    expect(screen.getByLabelText("Title")).toHaveAccessibleDescription(msg);
     expect(main.queryByText("Task could not be saved. Try again.")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Title")).toHaveValue("Buy milk");
     expect(screen.getByLabelText("Due date")).toHaveValue("2026-12-24");
