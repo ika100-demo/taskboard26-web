@@ -1,7 +1,7 @@
 ---
 spec_id: 001-task-board-on-the-start-page-that-lists
 title: Task board on the start page that lists and creates tasks
-status: approved
+status: building
 priority: P1
 shape: web-nextjs
 parent: ika100-demo/taskboard26-gitops:001-persistent-tasks-and-web-task-board
@@ -183,3 +183,4 @@ in-cluster URL the browser cannot reach; never expose it as `NEXT_PUBLIC_*`. Add
 
 - 2026-11-22 created from the system plan, with its criteria (spec 147)
 - 2026-11-22 approved
+- 2026-11-22 building
