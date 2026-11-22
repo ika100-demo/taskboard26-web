@@ -1,7 +1,7 @@
 ---
 spec_id: 001-task-board-on-the-start-page-that-lists
 title: Task board on the start page that lists and creates tasks
-status: building
+status: draft
 priority: P1
 shape: web-nextjs
 parent: ika100-demo/taskboard26-gitops:001-persistent-tasks-and-web-task-board
@@ -91,7 +91,7 @@ Rules no tool checks:
 - Both length rules apply to the title **after trimming** leading and trailing whitespace: a title of only whitespace counts as empty. The board checks them before sending and shows "Enter a title" for `title-required` / `title-min` and "Title must be at most 200 characters" for `title-max`; the API enforces them again with `422`.
 - `due_date` must be a calendar date in `YYYY-MM-DD` form or `null`/absent; anything else is `422` naming `due_date`. The board uses a date input, so it only ever sends a valid date or omits the field.
 - At most 10,000 tasks are stored; a further valid create is `409` `"task limit reached"`. The board does not count tasks itself, it maps the `409`.
-- The board shows its own fixed English messages, never the API's `detail` text (system A8).
+- The board shows its own fixed English messages, except that a `422` whose `detail` names `title` shows that entry's `msg` next to "Title" (system A8, revised 2026-11-22).
 
 ### Errors
 
@@ -107,7 +107,7 @@ errors:
     message: "Task could not be saved. Try again."
 ```
 
-A validation error is `422` with `detail` a list; each entry's `loc` is a list whose last element is the field name (`title` or `due_date`), `type` the rule that failed and `msg` a text for logs only. Other answers carry `detail` as one string: `409` `"task limit reached"`, `503` `"storage unavailable"`.
+A validation error is `422` with `detail` a list; each entry's `loc` is a list whose last element is the field name (`title` or `due_date`), `type` the rule that failed and `msg` a text the board shows at the field for `title` (system A8, revised). Other answers carry `detail` as one string: `409` `"task limit reached"`, `503` `"storage unavailable"`.
 
 How the board treats answers:
 
@@ -117,7 +117,8 @@ How the board treats answers:
 | `GET /tasks` | `503`, any other `5xx`, any status not listed above, a body that is not a task array, connection error, timeout | "Tasks could not be loaded. Try again later." in place of the list; the page itself answers `200` |
 | `POST /tasks` | `201` | the returned task appended at the end of the list, form emptied |
 | `POST /tasks` | `409` | "Task limit reached" next to the form, values kept |
-| `POST /tasks` | `422` (its own checks passed, so the API disagrees), `503`, any other `5xx`, any status not listed above, connection error, timeout | "Task could not be saved. Try again." next to the form, values kept, no task added to the list |
+| `POST /tasks` | `422` naming `title` (its own checks passed, so the API disagrees) | that entry's `msg` next to "Title", values kept, no task added to the list |
+| `POST /tasks` | `422` naming only other fields, `503`, any other `5xx`, any status not listed above, connection error, timeout | "Task could not be saved. Try again." next to the form, values kept, no task added to the list |
 
 ### Timeouts
 
@@ -164,14 +165,18 @@ in-cluster URL the browser cannot reach; never expose it as `NEXT_PUBLIC_*`. Add
 - **AC-001.3** Given the board is open, when a person submits a title that is empty or only whitespace, then the board shows "Enter a title" next to the form, keeps the entered values and sends no request to the Task API; when the title is longer than 200 characters after trimming, it shows "Title must be at most 200 characters" in the same way (system AC-001.6)
 - **AC-001.4** Given the board is open, when a person submits a valid task and the Task API answers `409`, then the board shows "Task limit reached" next to the form, keeps the entered values and lists no new task (system AC-001.6)
 - **AC-001.5** Given the Task API is unreachable, does not answer within 5 seconds or answers `5xx` (including `503` "storage unavailable") or a status the contract does not list, when a person opens `/`, then the page loads with `200` and shows "Tasks could not be loaded. Try again later." in place of the list (system AC-001.7)
-- **AC-001.6** Given the Task API is unreachable, does not answer within 5 seconds, answers `5xx`, a `422` or a status the contract does not list, when a person submits the form, then the board shows "Task could not be saved. Try again.", keeps the entered values and lists no new task (system AC-001.7)
+- **AC-001.6** Given the Task API is unreachable, does not answer within 5 seconds, answers `5xx`, a `422` whose `detail` names only fields other than `title` (e.g. only `due_date`) or a status the contract does not list, when a person submits the form, then the board shows "Task could not be saved. Try again.", keeps the entered values and lists no new task (system AC-001.7)
 - **AC-001.7** Given the Task API is unreachable, when the platform probes the board, then `/api/health` and `/api/ready` keep answering `200`, so the board stays served (system AC-001.7)
+- **AC-001.8** Given the board is open and the entered title passes the board's own checks, when a person submits the form and the Task API answers `422` whose `detail` has an entry with `loc` ending in `title`, then the board shows that entry's `msg` next to the "Title" field, keeps the entered values and lists no new task (system AC-001.6)
 
 ## Non-goals
 
 ## Assumptions
 
 <!-- Spec 149: decisions taken by default, approved with the spec. One bullet each: - **A1** <the decision> (other option: <…>; affects AC-…). A revised one is struck through (~~…~~), never deleted. -->
+
+- **A1** When the `422`'s `detail` has several entries naming `title`, the board shows the first one's `msg`; entries naming other fields in the same answer are not shown (other option: show every title `msg`; affects AC-001.8).
+- **A2** The API's `msg` is shown as plain text, never interpreted as markup (other option: none sensible; affects AC-001.8).
 
 ## Open questions
 
@@ -184,3 +189,5 @@ in-cluster URL the browser cannot reach; never expose it as `NEXT_PUBLIC_*`. Add
 - 2026-11-22 created from the system plan, with its criteria (spec 147)
 - 2026-11-22 approved
 - 2026-11-22 building
+- 2026-11-22 draft: amend: follow revised system A8 — a title 422 shows the API msg at Title
+- 2026-11-22 amended: AC-001.8 added (a `422` naming `title` shows its `msg` at "Title"); AC-001.6 narrowed to a `422` naming only other fields; contract rules, errors and answer table follow the revised system plan; A1, A2 added
