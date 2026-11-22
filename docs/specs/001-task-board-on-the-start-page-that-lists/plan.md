@@ -10,12 +10,14 @@ tasks:
     covers: [AC-001.3]
     parallel_safe: true
     depends_on: []
+    done: true
   - id: t2
     title: Add the server-only Task API client with 5 s timeouts
     files: [lib/tasks/api.ts, docs/env-vars.md, tests/unit/tasks-api.test.ts]
     covers: [AC-001.1, AC-001.2, AC-001.4, AC-001.5, AC-001.6, AC-001.7]
     parallel_safe: true
     depends_on: []
+    done: true
   - id: t3
     title: Replace the start page with the task board (page, client board, Server Action)
     files: [app/page.tsx, app/actions.ts, app/_components/task-board.tsx, app/_components/feature-card.tsx, app/_components/icons.tsx, app/globals.css, tests/page.test.tsx, e2e/board-smoke.spec.ts]
