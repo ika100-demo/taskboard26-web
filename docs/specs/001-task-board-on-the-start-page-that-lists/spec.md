@@ -1,7 +1,7 @@
 ---
 spec_id: 001-task-board-on-the-start-page-that-lists
 title: Task board on the start page that lists and creates tasks
-status: draft
+status: approved
 priority: P1
 shape: web-nextjs
 parent: ika100-demo/taskboard26-gitops:001-persistent-tasks-and-web-task-board
@@ -191,3 +191,4 @@ in-cluster URL the browser cannot reach; never expose it as `NEXT_PUBLIC_*`. Add
 - 2026-11-22 building
 - 2026-11-22 draft: amend: follow revised system A8 — a title 422 shows the API msg at Title
 - 2026-11-22 amended: AC-001.8 added (a `422` naming `title` shows its `msg` at "Title"); AC-001.6 narrowed to a `422` naming only other fields; contract rules, errors and answer table follow the revised system plan; A1, A2 added
+- 2026-11-22 approved; the old plan is plan.v1.md
