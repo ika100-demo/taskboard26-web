@@ -1,8 +1,12 @@
 import { logger } from "@/lib/logger";
+import type { FieldErrors } from "@/lib/tasks/validate";
 
 export type Task = { id: string; title: string; due_date: string | null; created_at: string };
 export type ListResult = { ok: true; tasks: Task[] } | { ok: false };
-export type CreateResult = { ok: true; task: Task } | { ok: false; error: "limit" | "failed" };
+export type CreateResult =
+  | { ok: true; task: Task }
+  | { ok: false; fieldErrors: FieldErrors }
+  | { ok: false; error: "limit" | "failed" };
 
 const TIMEOUT_MS = 5000;
 
@@ -20,6 +24,21 @@ export function isTask(value: unknown): value is Task {
     typeof v.created_at === "string" &&
     (typeof v.due_date === "string" || v.due_date === null)
   );
+}
+
+/** First title entry's msg in a 422 body's detail list, or null. */
+export function titleErrorMessage(body: unknown): string | null {
+  if (typeof body !== "object" || body === null) return null;
+  const detail = (body as Record<string, unknown>).detail;
+  if (!Array.isArray(detail)) return null;
+  for (const entry of detail as unknown[]) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const { loc, msg } = entry as Record<string, unknown>;
+    const isTitle = Array.isArray(loc) ? loc[loc.length - 1] === "title" : loc === "title";
+    if (!isTitle) continue;
+    return typeof msg === "string" && msg !== "" ? msg : null;
+  }
+  return null;
 }
 
 function fail(op: "list" | "create", fields: { status?: number; error?: string }): void {
@@ -62,6 +81,13 @@ export async function createTask(input: { title: string; due_date?: string }): P
     if (res.status === 409) {
       fail("create", { status: 409 });
       return { ok: false, error: "limit" };
+    }
+    if (res.status === 422) {
+      fail("create", { status: 422 });
+      const detail: unknown = await res.json().catch(() => null);
+      const msg = titleErrorMessage(detail);
+      if (msg !== null) return { ok: false, fieldErrors: { title: msg } };
+      return { ok: false, error: "failed" };
     }
     if (res.status !== 201) {
       fail("create", { status: res.status });

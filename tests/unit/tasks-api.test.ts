@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createTask, listTasks } from "@/lib/tasks/api";
+import { createTask, listTasks, titleErrorMessage } from "@/lib/tasks/api";
 
 const task = { id: "1", title: "a", due_date: null, created_at: "2026-01-01T00:00:00Z" };
 
@@ -50,6 +50,20 @@ describe("listTasks", () => {
   });
 });
 
+describe("titleErrorMessage", () => {
+  it.each([
+    [null, null],
+    ["x", null],
+    [{}, null],
+    [{ detail: [] }, null],
+    [{ detail: ["x", null, { loc: ["title"], msg: "m" }] }, "m"],
+    [{ detail: [{ loc: ["body", "title", 0], msg: "m" }] }, null],
+    [{ detail: [{ loc: 3, msg: "m" }] }, null],
+  ])("titleErrorMessage(%j) is %j", (body, expected) => {
+    expect(titleErrorMessage(body)).toBe(expected);
+  });
+});
+
 describe("createTask", () => {
   it("returns the task on 201", async () => {
     fetchMock.mockResolvedValue(reply(201, task));
@@ -78,6 +92,35 @@ describe("createTask", () => {
     ["418", reply(418, {})],
     ["201 bad body", reply(201, { id: 1 })],
   ])("maps %s to failed", async (_n, res) => {
+    fetchMock.mockResolvedValue(res);
+    expect(await createTask({ title: "a" })).toEqual({ ok: false, error: "failed" });
+  });
+
+  it.each([
+    ["loc list", { detail: [{ loc: ["body", "title"], msg: "too long" }] }, "too long"],
+    ["loc string", { detail: [{ loc: "title", msg: "bad" }] }, "bad"],
+    [
+      "due_date first",
+      { detail: [{ loc: ["body", "due_date"], msg: "d" }, { loc: ["body", "title"], msg: "t" }] },
+      "t",
+    ],
+    [
+      "two title entries",
+      { detail: [{ loc: ["body", "title"], msg: "first" }, { loc: ["body", "title"], msg: "second" }] },
+      "first",
+    ],
+  ])("maps a 422 with a title entry (%s) to fieldErrors", async (_n, body, msg) => {
+    fetchMock.mockResolvedValue(reply(422, body));
+    expect(await createTask({ title: "a" })).toEqual({ ok: false, fieldErrors: { title: msg } });
+  });
+
+  it.each([
+    ["only due_date", reply(422, { detail: [{ loc: ["body", "due_date"], msg: "d" }] })],
+    ["empty msg", reply(422, { detail: [{ loc: ["body", "title"], msg: "" }] })],
+    ["non-string msg", reply(422, { detail: [{ loc: ["body", "title"], msg: 5 }] })],
+    ["non-list detail", reply(422, { detail: "title" })],
+    ["invalid json", reply(422, "not json")],
+  ])("maps a 422 without a usable title msg (%s) to failed", async (_n, res) => {
     fetchMock.mockResolvedValue(res);
     expect(await createTask({ title: "a" })).toEqual({ ok: false, error: "failed" });
   });

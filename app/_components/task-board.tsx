@@ -33,7 +33,8 @@ export function TaskBoard({ initialTasks, loadFailed }: TaskBoardProps) {
         setTitle("");
         setDueDate("");
       } else if ("fieldErrors" in result) {
-        setTitleError(result.fieldErrors.title ?? MSG.saveFailed);
+        if (result.fieldErrors.title) setTitleError(result.fieldErrors.title);
+        else setFormError(MSG.saveFailed);
       } else {
         setFormError(result.error === "limit" ? MSG.limitReached : MSG.saveFailed);
       }

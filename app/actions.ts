@@ -6,6 +6,7 @@ import { validateTask, type FieldErrors } from "@/lib/tasks/validate";
 export type CreateTaskInput = { title: string; due_date: string };
 export type CreateTaskState =
   | { ok: true; task: Task }
+  // fieldErrors: board's own rules failed (no fetch made) or the API's 422 named title
   | { ok: false; fieldErrors: FieldErrors }
   | { ok: false; error: "limit" | "failed" };
 

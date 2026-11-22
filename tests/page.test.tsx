@@ -95,6 +95,29 @@ describe("task board interactions", () => {
     expect(await screen.findByText("Task could not be saved. Try again.")).toBeInTheDocument();
   });
 
+  it("shows the API title msg at Title and keeps the values", async () => {
+    await renderPage({ ok: true, tasks: [] });
+    vi.mocked(createTask).mockResolvedValue({ ok: false, fieldErrors: { title: "<b>Too long</b>" } });
+    fill("Buy milk", "2026-12-25");
+    submit();
+    await waitFor(() => expect(document.getElementById("title-error")).toHaveTextContent("<b>Too long</b>"));
+    expect(screen.getByLabelText("Title")).toHaveValue("Buy milk");
+    expect(screen.getByLabelText("Due date")).toHaveValue("2026-12-25");
+    expect(document.getElementById("form-error")).toBeNull();
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+  });
+
+  it("shows the save error for field errors without a title entry", async () => {
+    await renderPage({ ok: true, tasks: [] });
+    vi.mocked(createTask).mockResolvedValue({ ok: false, fieldErrors: {} });
+    fill("Buy milk");
+    submit();
+    await waitFor(() =>
+      expect(document.getElementById("form-error")).toHaveTextContent("Task could not be saved. Try again."),
+    );
+    expect(document.getElementById("title-error")).toBeNull();
+  });
+
   it("appends a created task below the load error", async () => {
     await renderPage({ ok: false });
     vi.mocked(createTask).mockResolvedValue({ ok: true, task: task("9", "Buy milk") });
