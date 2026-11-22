@@ -251,9 +251,9 @@ describe("AC-001.6 save failure", () => {
     ["500", () => json(500, { detail: "internal boom" }), "internal boom"],
     ["503", () => json(503, { detail: "storage unavailable" }), "storage unavailable"],
     [
-      "422",
-      () => json(422, { detail: [{ loc: ["body", "title"], msg: "String should have at least 1 character", type: "string_too_short" }] }),
-      "String should have at least 1 character",
+      "422 naming only due_date",
+      () => json(422, { detail: [{ loc: ["body", "due_date"], msg: "Input should be a valid date", type: "date_from_datetime_parsing" }] }),
+      "Input should be a valid date",
     ],
     ["unlisted status 418", () => json(418, { detail: "teapot" }), "teapot"],
   ];
@@ -290,6 +290,25 @@ describe("AC-001.6 save failure", () => {
       await vi.advanceTimersByTimeAsync(0);
     });
     expect(main.getByText("Task could not be saved. Try again.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Title")).toHaveValue("Buy milk");
+    expect(screen.getByLabelText("Due date")).toHaveValue("2026-12-24");
+    expect(main.queryByRole("list", { name: "Tasks" })).not.toBeInTheDocument();
+  });
+});
+
+describe("AC-001.8 API title rejection", () => {
+  it("AC-001.8 a 422 naming title shows the API msg at Title, keeps values and lists no task", async () => {
+    const msg = "String should have at least 1 character";
+    stubApi((_url, init) =>
+      isPost(init)
+        ? json(422, { detail: [{ loc: ["body", "title"], msg, type: "string_too_short" }] })
+        : json(200, []),
+    );
+    const main = await renderPage();
+    fill("Buy milk", "2026-12-24");
+    submit();
+    expect(await main.findByText(msg)).toBeInTheDocument();
+    expect(main.queryByText("Task could not be saved. Try again.")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Title")).toHaveValue("Buy milk");
     expect(screen.getByLabelText("Due date")).toHaveValue("2026-12-24");
     expect(main.queryByRole("list", { name: "Tasks" })).not.toBeInTheDocument();
