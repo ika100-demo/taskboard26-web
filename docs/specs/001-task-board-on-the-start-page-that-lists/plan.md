@@ -31,6 +31,7 @@ tasks:
     covers: [AC-001.6, AC-001.8]
     parallel_safe: true
     depends_on: [t2, t3]
+    done: true
   - id: t4
     title: Wire the contract check adapter to the board and record the contract SHA in the secrets baseline
     files: [tests/contract/adapter.ts, .secrets.baseline.json]
