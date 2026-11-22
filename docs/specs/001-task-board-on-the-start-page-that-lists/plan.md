@@ -38,6 +38,7 @@ tasks:
     covers: [AC-001.3, AC-001.6, AC-001.8]
     parallel_safe: false
     depends_on: [t1, t3, t5]
+    done: true
 ---
 
 # Plan — 001 Task board on the start page that lists and creates tasks
