@@ -24,6 +24,7 @@ tasks:
     covers: [AC-001.1, AC-001.2, AC-001.3, AC-001.4, AC-001.5, AC-001.6]
     parallel_safe: false
     depends_on: [t1, t2]
+    done: true
   - id: t4
     title: Wire the contract check adapter to the board
     files: [tests/contract/adapter.ts]
